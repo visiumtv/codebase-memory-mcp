@@ -474,7 +474,7 @@ open Claude Code sessions, then run `/mcp`. You should see
 the shell:
 
 ```bash
-codebase-memory-mcp cli --progress index_repository /path/to/your/project
+codebase-memory-mcp cli --progress index_repository --repo-path /path/to/your/project
 ```
 
 **Useful variations.** `install` covers more than the defaults printed by
