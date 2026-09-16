@@ -7,11 +7,63 @@
 #   - Reproduced RED cases → expected board data → report the count, exit 0.
 #   - Any skipped case     → incomplete board → report it, exit non-zero.
 #
-# Usage: scripts/repro.sh [CC=clang] [CXX=clang++] [--arch arm64|x86_64]
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+usage() {
+    cat <<'EOF'
+Usage: scripts/repro.sh [--arch arm64|x86_64] [VAR=VAL ...]
+
+Build and run the cumulative BUG-REPRODUCTION suite (test-repro). Unlike
+test.sh (the gating suite, which must be GREEN), this board tracks open RED
+reproductions alongside GREEN controls and regression guards.
+
+Options:
+  --arch ARCH       Target architecture (arm64|x86_64); also --arch=ARCH.
+  VAR=VAL           Forwarded to make (e.g. CC=clang CXX=clang++). CC and CXX
+                    are additionally exported for the compiler probe.
+  -h, --help        Print this help and exit.
+
+Exit codes:
+  0   The board ran; reproduced RED cases are expected data, not failures.
+  1   Build/link failure, no runner summary, or a skipped case.
+  2   Usage error.
+EOF
+}
+
+# STRICT: an unknown flag or a stray word is an immediate usage error. Without
+# this, `--help` fell through every case arm and started a full sanitizer
+# build — the opposite of what asking for help should cost.
+prev_arg=""
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help) usage; exit 0 ;;
+        --arch) :;; # next arg is the value, validated below
+        --arch=*) :;;
+        arm64|x86_64)
+            if [[ "${prev_arg:-}" != "--arch" ]]; then
+                echo "repro.sh: unexpected argument '$arg' (did you mean --arch $arg?). Please consult --help." >&2
+                exit 2
+            fi
+            ;;
+        -*)
+            echo "repro.sh: unknown option '$arg'. Please consult --help." >&2
+            exit 2
+            ;;
+        *=*) :;; # VAR=VAL make passthrough
+        *)
+            echo "repro.sh: unexpected argument '$arg'. Please consult --help." >&2
+            exit 2
+            ;;
+    esac
+    prev_arg="$arg"
+done
+if [[ "${prev_arg:-}" == "--arch" ]]; then
+    echo "repro.sh: '--arch' needs a value. Please consult --help." >&2
+    exit 2
+fi
 
 # --arch before sourcing env.sh (mirrors test.sh)
 prev_arg=""

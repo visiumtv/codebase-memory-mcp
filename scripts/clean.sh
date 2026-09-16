@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # clean.sh — Remove ALL build artifacts, caches, and generated files.
 #
-# Usage: scripts/clean.sh
-#
 # Ensures every subsequent build starts from scratch — no cached .o files,
 # no stale node_modules, no leftover dist folders. This is the first step
 # in both scripts/test.sh and scripts/build.sh.
@@ -10,6 +8,39 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+usage() {
+    cat <<'EOF'
+Usage: scripts/clean.sh
+
+Remove ALL build artifacts, caches and generated files so the next build
+starts from scratch. Run as the first step of scripts/test.sh and
+scripts/build.sh.
+
+Env:
+  BUILD_DIR   Directory to remove (default: build/c). Containerized legs set
+              this so a container clean never deletes the host's native
+              build/c mid-build.
+
+Options:
+  -h, --help  Print this help and exit.
+
+Exit codes:
+  0 = cleaned · 2 = usage error.
+EOF
+}
+
+# STRICT: this script deletes things, so a mistyped argument must stop it
+# rather than be ignored while the default BUILD_DIR is removed anyway.
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help) usage; exit 0 ;;
+        *)
+            echo "clean.sh: unexpected argument '$arg'. Please consult --help." >&2
+            exit 2
+            ;;
+    esac
+done
 
 # shellcheck source=path-safety.sh
 source "$ROOT/scripts/path-safety.sh"

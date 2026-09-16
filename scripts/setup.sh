@@ -45,9 +45,16 @@ for arg in "$@"; do
             echo ""
             echo "  Default:        Download pre-built binary from GitHub Release"
             echo "  --from-source:  Clone and build from source (requires Go 1.23+ and a C compiler)"
+            echo ""
+            echo "Exit codes: 0 = installed · 1 = install failure · 2 = usage error."
             exit 0
             ;;
-        *) die "Unknown argument: $arg" ;;
+        *)
+            # Exit 2 with the uniform line, not die's exit 1: a usage error and
+            # a failed install must stay distinguishable to a caller.
+            fail "Unknown argument: $arg. Please consult --help."
+            exit 2
+            ;;
     esac
 done
 
