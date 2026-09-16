@@ -125,7 +125,7 @@ def function_spans(path):
                             d += clean[j].count("{") - clean[j].count("}")
                             end = j
                         yield (name_match.group(1), body_start + 1, end + 1,
-                               "\n".join(l.rstrip() for l in lines[body_start:end + 1]))
+                               "\n".join(ln.rstrip() for ln in lines[body_start:end + 1]))
         depth += opened - closed
         if depth < 0:
             depth = 0

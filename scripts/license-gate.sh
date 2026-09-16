@@ -43,7 +43,11 @@ echo "=== License gate 1/2: structural coverage ==="
 # code with no license is flagged immediately.
 MISS=0
 has_license_dir() {
-    ls "$1" 2>/dev/null | grep -qiE '^(LICENSE|LICENCE|COPYING|UNLICENSE|NOTICE)'
+    # find, not `ls | grep`: a name carrying a newline or a leading dash cannot
+    # desync the match. -print -quit stops at the first hit.
+    [ -n "$(find "$1" -mindepth 1 -maxdepth 1 \
+        \( -iname 'LICENSE*' -o -iname 'LICENCE*' -o -iname 'COPYING*' \
+           -o -iname 'UNLICENSE*' -o -iname 'NOTICE*' \) -print -quit 2>/dev/null)" ]
 }
 for root in vendored internal/cbm/vendored; do
     find "$root" -type f \

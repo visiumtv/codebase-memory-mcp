@@ -6,10 +6,40 @@ set -euo pipefail
 # license/notice text of every vendored component (both vendored trees).
 # Deterministic output (sorted file order).
 #
-# Usage: scripts/gen-third-party-notices.sh [output-path]
-#   default output: build/THIRD_PARTY_NOTICES.md
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+usage() {
+    cat <<'EOF'
+Usage: scripts/gen-third-party-notices.sh [output-path]
+
+Generate the third-party notices bundle shipped inside every release archive:
+THIRD_PARTY.md, the grammar provenance manifest, and the verbatim license /
+notice text of every vendored component in both vendored trees. Output is
+deterministic (sorted file order).
+
+  output-path   Where to write (default: build/THIRD_PARTY_NOTICES.md).
+
+Options:
+  -h, --help    Print this help and exit.
+
+Exit codes:
+  0 = written · 2 = usage error.
+EOF
+}
+
+# Answered before OUT is derived from $1: otherwise `--help` was taken as the
+# output path and the script wrote a 563 KB file literally named "--help"
+# into the working directory.
+case "${1:-}" in
+    -h|--help) usage; exit 0 ;;
+    -*) echo "gen-third-party-notices.sh: unknown option '$1'. Please consult --help." >&2; exit 2 ;;
+esac
+if [ "$#" -gt 1 ]; then
+    echo "gen-third-party-notices.sh: expected at most one output path. Please consult --help." >&2
+    exit 2
+fi
+
 OUT="${1:-$ROOT/build/THIRD_PARTY_NOTICES.md}"
 mkdir -p "$(dirname "$OUT")"
 

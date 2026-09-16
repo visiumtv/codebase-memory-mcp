@@ -148,7 +148,7 @@ SANITIZE_GIVEN=0
 prev_arg=""
 for arg in "$@"; do
     case "$arg" in
-        CC=*|CXX=*) export "${arg}" ;;
+        CC=*|CXX=*) export "${arg?}" ;;
         --arch|--arch=*) ;; # already handled
         arm64|x86_64) ;; # already handled
         --tsan) ;; # already handled

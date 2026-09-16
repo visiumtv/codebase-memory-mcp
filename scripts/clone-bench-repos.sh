@@ -8,7 +8,7 @@ set -euo pipefail
 BENCH_DIR="${1:-/tmp/bench}"
 
 clone() {
-    local lang="$1" repo="$2" subdir="${3:-}"
+    local lang="$1" repo="$2"
     local dest="$BENCH_DIR/$lang"
     if [ -d "$dest" ]; then
         echo "SKIP: $lang (exists)"
