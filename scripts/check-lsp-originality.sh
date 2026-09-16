@@ -128,7 +128,16 @@ fi
 
 # --- 2. Fetch reference sources (shallow + sparse) ----------------------------
 fetch_ref() {
-  local lang="$1" url="$2" subpath="$3" dst="$REFS_DIR/$lang"
+  # Two statements, not one: in a single `local`, every word is expanded BEFORE
+  # the builtin runs, so `dst="$REFS_DIR/$lang"` would read the CALLER's $lang,
+  # not this function's parameter. It happened to work only because the loop
+  # below keeps a same-named global — and the `rm -rf "$dst"` two lines down
+  # would erase all of REFS_DIR the moment that stopped being true.
+  local lang="$1" url="$2" subpath="$3"
+  local dst="$REFS_DIR/$lang"
+  if [ -z "$lang" ]; then
+    echo "$TAG internal error: fetch_ref called without a language" >&2; return 1
+  fi
   if [ -d "$dst/.git" ] && [ "$REFRESH" -eq 0 ]; then return 0; fi
   rm -rf "$dst"; mkdir -p "$dst"
   echo "$TAG fetching $lang ($url :: $subpath) ..."

@@ -10,8 +10,26 @@ import json
 import re
 import sys
 
+USAGE = """Usage: license-gate-check.py <scan.json> <license-policy.json>
+
+Check a ScanCode Toolkit JSON scan against the license policy's SPDX
+allow-list. One file with a non-allow-listed detection fails the gate.
+
+Exit codes: 0 = all detections allow-listed · 1 = violations found
+            2 = usage error."""
+
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
+        print(USAGE)
+        return
+    # Guard the unpack: without it a missing argument surfaced as a raw
+    # IndexError traceback instead of telling the caller what to pass.
+    if len(sys.argv) != 3:
+        print(USAGE, file=sys.stderr)
+        print("\nerror: expected 2 arguments, got %d. Please consult --help."
+              % (len(sys.argv) - 1), file=sys.stderr)
+        sys.exit(2)
     scan_path, policy_path = sys.argv[1], sys.argv[2]
     with open(policy_path) as fh:
         policy = json.load(fh)
