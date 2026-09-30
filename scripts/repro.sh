@@ -6,7 +6,7 @@
 #   - BUILD/LINK failure  → real breakage → exit non-zero (fail the CI job).
 #   - Reproduced RED cases → expected board data → report the count, exit 0.
 #   - Any skipped case     → incomplete board → report it, exit non-zero.
-#
+
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

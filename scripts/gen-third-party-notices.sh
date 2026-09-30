@@ -5,7 +5,6 @@ set -euo pipefail
 # archive: THIRD_PARTY.md + the grammar provenance manifest + the verbatim
 # license/notice text of every vendored component (both vendored trees).
 # Deterministic output (sorted file order).
-#
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 

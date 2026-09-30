@@ -16,7 +16,7 @@
 # be architectural, and the local ladder has no faithful x86-64 emulation to
 # decide it. An accepted venue divergence for this lane specifically: the
 # exclusions below are the LOCAL default only, and CI overrides them away.
-#
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
