@@ -13,6 +13,7 @@ import base64
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -56,8 +57,36 @@ CANDIDATE_NAMES = ["LICENSE", "LICENSE.md", "LICENSE.txt", "COPYING",
                    "license", "License.txt", "NOTICE"]
 
 
+USAGE = """Usage: audit-license-provenance.py
+
+Compare every vendored license file against its upstream, byte for byte, and
+print one verdict per vendored tree (IDENTICAL, IDENTICAL@PINNED,
+FIRST-PARTY-OK, FIRST-PARTY-VAR, DIFFERS, ERROR).
+
+Requires the `gh` CLI (authenticated, for the GitHub API) and `curl` (for the
+canonical Apache-2.0 text). Takes no arguments.
+
+Exit codes: 0 = audit ran · 1 = a required tool is missing or the audit
+            failed · 2 = usage error."""
+
+
+def require_tools():
+    """Fail with one clear line instead of a FileNotFoundError traceback."""
+    missing = [t for t in ("gh", "curl") if shutil.which(t) is None]
+    if missing:
+        print("error: required tool(s) not found on PATH: %s" % ", ".join(missing),
+              file=sys.stderr)
+        print("  gh   - GitHub API access (https://cli.github.com, then `gh auth login`)",
+              file=sys.stderr)
+        print("  curl - fetches the canonical Apache-2.0 text", file=sys.stderr)
+        sys.exit(1)
+
+
 def gh_api(path):
-    r = subprocess.run(["gh", "api", path], capture_output=True, text=True)
+    try:
+        r = subprocess.run(["gh", "api", path], capture_output=True, text=True)
+    except OSError:
+        return None
     if r.returncode != 0:
         return None
     return r.stdout
@@ -114,6 +143,16 @@ def parse_manifest():
 
 
 def main():
+    if len(sys.argv) > 1:
+        if sys.argv[1] in ("-h", "--help"):
+            print(USAGE)
+            return
+        print(USAGE, file=sys.stderr)
+        print("\nerror: unexpected argument '%s'. Please consult --help."
+              % sys.argv[1], file=sys.stderr)
+        sys.exit(2)
+    require_tools()
+
     with open(os.path.join(ROOT, "LICENSE"), encoding="utf-8") as fh:
         root_license = fh.read()
 

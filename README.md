@@ -401,6 +401,129 @@ scripts/ci/smoke-artifact.sh <linux|darwin|windows> <amd64|arm64>
 it accepts only an already-final `--selected-binary` plus its
 `--expected-sha256`; it never builds, strips, signs, or relinks the executable.
 
+### Install from a Local Checkout
+
+Run your own reviewed source instead of a downloaded release: build the binary
+from a checkout you control, then install that exact executable for every
+Claude Code session on the machine. Nothing is fetched from the network, and the
+result cannot update itself — see [Why this build stays put](#why-this-build-stays-put)
+below.
+
+**Step 1 — get the source and pick the commit you trust.**
+
+```bash
+git clone https://github.com/DeusData/codebase-memory-mcp.git
+cd codebase-memory-mcp
+git log --oneline -5          # review; git checkout <commit> to pin an older one
+```
+
+**Step 2 — build.**
+
+```bash
+scripts/build.sh --with-ui    # the shipped composition; needs node for the graph UI
+scripts/build.sh              # without the graph UI — MCP works either way
+```
+
+The executable lands at `build/c/codebase-memory-mcp`
+(`build\c\codebase-memory-mcp.exe` on Windows). Confirm it runs:
+
+```bash
+echo '{}' | build/c/codebase-memory-mcp     # prints a JSON line
+```
+
+**Step 3 — preview what the install would change.** Nothing is written yet:
+
+```bash
+build/c/codebase-memory-mcp install --dry-run --clients=claude
+```
+
+Expect a plan like this — the binary destination, the config file, and the
+skill/agents/hooks that come with it:
+
+```
+Would install binary -> ~/.local/bin/codebase-memory-mcp
+Detected agents: Claude-Code
+Claude Code:
+  skills: 1 installed
+  agent: ~/.claude/agents/codebase-memory-scout.md
+  agent: ~/.claude/agents/codebase-memory.md
+  agent: ~/.claude/agents/codebase-memory-auditor.md
+  mcp: ~/.claude.json
+  hooks: PreToolUse Grep/Glob search augmentation + PostToolUse Read coverage (non-blocking)
+  hooks: SessionStart (MCP usage reminder on startup/resume/clear/compact)
+  hooks: SubagentStart (MCP usage reminder for subagents)
+Added ~/.local/bin to PATH in ~/.bashrc
+```
+
+**Step 4 — install.** Drop `--clients=claude` to configure every detected client
+instead of Claude Code alone:
+
+```bash
+build/c/codebase-memory-mcp install --clients=claude
+```
+
+This **copies** the executable to `~/.local/bin/codebase-memory-mcp`, adds that
+directory to your `PATH`, and registers the server in `~/.claude.json` — user
+scope, so it applies to every project and every Claude Code session (terminal,
+IDE extension, desktop app). Claude Code is the supported surface here; the
+Claude chat desktop app uses a separate config this installer does not write.
+
+**Step 5 — restart and verify.** Restart your shell (`source ~/.bashrc`) and any
+open Claude Code sessions, then run `/mcp`. You should see
+`codebase-memory-mcp` with 15 tools. Ask it to index your project, or do it from
+the shell:
+
+```bash
+codebase-memory-mcp cli --progress index_repository --repo-path /path/to/your/project
+```
+
+**Useful variations.** `install` covers more than the defaults printed by
+`install --help`:
+
+| Goal | Command |
+|---|---|
+| Only the MCP entry, no skill/agents/hooks | `install --skip-config` |
+| Only the agent config, leave the binary and `PATH` alone | `install --skip-binary` |
+| A different install directory | `install --dir=/opt/cbm` |
+| See the token for every client | `install --clients` |
+| Configure several clients | `install --clients=claude,codex` |
+| Remove everything it owns | `codebase-memory-mcp uninstall` |
+
+`uninstall` removes the owned config entries, skill, hooks, instructions and the
+installed binary; existing indexes are listed and deleted only after you confirm.
+
+#### Why this build stays put
+
+Installing from a checkout is the way to guarantee the bytes you reviewed are the
+bytes that run. Three properties back that up:
+
+- **`install` copies the executable.** `~/.local/bin/codebase-memory-mcp` is a
+  snapshot, independent of the checkout afterwards. Rebuilding or deleting the
+  clone does not change the installed server — and a rebuild is only picked up
+  when you re-run `install`.
+- **The binary makes no network request of its own accord.** It does not check
+  for versions in the background and nothing phones home.
+- **No updater is left behind.** `install.sh` is what copies itself beside the
+  executable, and you never ran it — so the release downloader is simply not
+  present. `codebase-memory-mcp update` only ever prints the command it would
+  have you run; it never replaces anything itself.
+
+To move to a newer version later, pull, review, rebuild, and re-run `install` —
+the same five steps, deliberately.
+
+#### Pointing at the build directory instead
+
+If you *are* changing the server's own code, register `build/c/` directly so each
+rebuild takes effect without re-installing. Note the reverse trade-off: the
+server then changes whenever the checkout does.
+
+```bash
+BIN="$(pwd)/build/c/codebase-memory-mcp"          # must be absolute
+claude mcp add -s user    codebase-memory-mcp "$BIN"   # all projects
+claude mcp add -s project codebase-memory-mcp "$BIN"   # this project, committed as .mcp.json
+claude mcp add -s local   codebase-memory-mcp "$BIN"   # this project, just you
+```
+
 ### Manual MCP Configuration
 
 <details>

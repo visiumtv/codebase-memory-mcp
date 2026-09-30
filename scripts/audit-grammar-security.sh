@@ -27,10 +27,8 @@ TOTAL=0
 WARNED=0
 BLOCKED=0
 
-# Safe includes that scanners legitimately use
-SAFE_INCLUDES='string\.h|stdint\.h|stdbool\.h|stdlib\.h|wctype\.h|stdio\.h|stddef\.h|limits\.h|assert\.h|ctype\.h|wchar\.h|math\.h|stdalign\.h|stdarg\.h|float\.h|inttypes\.h'
-
-# Dangerous includes
+# Dangerous includes. There is no matching safe-include list: the scan is
+# deny-based, so anything not named here is allowed without being enumerated.
 DANGER_INCLUDES='unistd\.h|sys/|netdb\.h|dlfcn\.h|signal\.h|spawn\.h|pthread\.h|fcntl\.h|dirent\.h|termios\.h|arpa/|netinet/'
 
 # Dangerous function calls (word-boundary \b to avoid matching lex_accept, etc.)

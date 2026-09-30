@@ -391,6 +391,16 @@ scripts/ci/verify-shard-union.sh
 scripts/ci/generate-sbom.py
 scripts/package-release.sh
 scripts/ci/smoke-artifact.sh
+scripts/repro.sh
+scripts/msan.sh
+scripts/clean.sh
+scripts/setup.sh
+scripts/security-audit.sh
+scripts/gen-third-party-notices.sh
+scripts/install-git-hooks.sh
+scripts/license-gate-check.py
+scripts/license-gate-check-npm.py
+scripts/audit-license-provenance.py
 test-infrastructure/run.sh
 test-infrastructure/vm/vm-smoke.sh
 test-infrastructure/vm/vm-run-tests.sh
@@ -410,6 +420,8 @@ test-infrastructure/vm/win.sh
     # Strict-flag probe: hermetic entries only (no external deps before their
     # argument validation). vm-run-tests takes free-form suite names and
     # win.sh/run.sh need infra before dispatch — their --help is probed above.
+    # The .py entries are --help-probed only: this loop drives every entry
+    # through bash, which cannot run them.
     STRICT_ENTRIES="
 scripts/test.sh
 scripts/build.sh
@@ -419,6 +431,13 @@ scripts/soak-legs.sh
 scripts/ci/preflight-docker.sh
 test-infrastructure/vm/vm-smoke.sh
 scripts/smoke-invariants.sh
+scripts/repro.sh
+scripts/msan.sh
+scripts/clean.sh
+scripts/setup.sh
+scripts/security-audit.sh
+scripts/gen-third-party-notices.sh
+scripts/install-git-hooks.sh
 "
     for entry in $STRICT_ENTRIES; do
         out=$(cd "$ROOT" && bash "$entry" --definitely-not-a-flag 2>&1) && rc=0 || rc=$?

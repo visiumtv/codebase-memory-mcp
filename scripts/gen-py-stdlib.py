@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.9
+#!/usr/bin/env python3
 """
 gen-py-stdlib.py — Generate cbm_python_stdlib_register from typeshed stubs.
 
@@ -27,7 +27,6 @@ from __future__ import annotations
 import argparse
 import ast
 import dataclasses
-import os
 import sys
 from pathlib import Path
 from typing import Iterable

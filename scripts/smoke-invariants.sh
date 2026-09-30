@@ -129,14 +129,16 @@ run_bounded() {
         # and a blocking open would defeat `read -t`. On the deadline, force-kill
         # the whole command subtree with SIGKILL (children first so no orphan spins
         # on): SIGTERM is caught by the binary and cannot stop a busy-spin.
-        local done; done="$SCRATCH/rb_done.$$"
-        rm -f "$done"; mkfifo "$done" 2>/dev/null || done=""
-        ( "$@" >"$of" 2>&1; echo $? > "$SCRATCH/rb_rc.$$"; [ -n "$done" ] && echo done > "$done" ) &
+        # Not named `done`: that is a shell reserved word, so every use had to
+        # dodge being parsed as loop syntax.
+        local donefifo; donefifo="$SCRATCH/rb_done.$$"
+        rm -f "$donefifo"; mkfifo "$donefifo" 2>/dev/null || donefifo=""
+        ( "$@" >"$of" 2>&1; echo $? > "$SCRATCH/rb_rc.$$"; [ -n "$donefifo" ] && echo "done" > "$donefifo" ) &
         local bgpid=$!
-        if [ -n "$done" ]; then
-            exec 9<>"$done"
+        if [ -n "$donefifo" ]; then
+            exec 9<>"$donefifo"
             local sig=""
-            read -t "$secs" sig <&9
+            read -r -t "$secs" sig <&9
             exec 9<&-
             if [ -z "$sig" ]; then
                 pkill -9 -P "$bgpid" 2>/dev/null || true
@@ -145,7 +147,7 @@ run_bounded() {
             else
                 RB_RC="$(cat "$SCRATCH/rb_rc.$$" 2>/dev/null || echo 1)"
             fi
-            rm -f "$done"
+            rm -f "$donefifo"
         else
             wait "$bgpid"; RB_RC=$?
         fi

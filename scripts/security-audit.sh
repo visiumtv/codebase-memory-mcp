@@ -3,11 +3,39 @@ set -euo pipefail
 
 # Layer 1: Static security audit — scans C source for dangerous calls.
 # Every occurrence must be on the checked-in allow-list.
-#
-# Usage: scripts/security-audit.sh
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ALLOWLIST="$ROOT/scripts/security-allowlist.txt"
+
+usage() {
+    cat <<'EOF'
+Usage: scripts/security-audit.sh
+
+Layer 1 of the security ladder: a static scan of the C sources for dangerous
+calls (system, popen, cbm_popen, execl, fork), raw network use and unsafe
+string handling. Every occurrence must appear in
+scripts/security-allowlist.txt with a justification; anything else fails the
+audit. Runs in the pre-commit hook and the CI security lane.
+
+Options:
+  -h, --help  Print this help and exit.
+
+Exit codes:
+  0 = clean · 1 = findings outside the allow-list · 2 = usage error.
+EOF
+}
+
+# STRICT: a gate that silently ignored its arguments could be invoked with a
+# misspelled scope flag and still report a pass over everything.
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help) usage; exit 0 ;;
+        *)
+            echo "security-audit.sh: unexpected argument '$arg'. Please consult --help." >&2
+            exit 2
+            ;;
+    esac
+done
 
 if [[ ! -f "$ALLOWLIST" ]]; then
     echo "FAIL: allow-list not found: $ALLOWLIST"

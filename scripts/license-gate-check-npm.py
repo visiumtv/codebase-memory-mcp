@@ -61,7 +61,26 @@ def collect(ui_dir, dep_tree, out):
         collect(ui_dir, info.get("dependencies"), out)
 
 
+USAGE = """Usage: license-gate-check-npm.py <graph-ui-dir> <license-policy.json>
+
+Walk the graph-UI npm PRODUCTION dependency tree and fail if any bundled
+package's license is not on the policy allow-list. Unknown is not allowed.
+
+Exit codes: 0 = every package allow-listed · 1 = violations found
+            2 = usage error."""
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
+        print(USAGE)
+        return
+    # Guard the unpack: without it a missing argument surfaced as a raw
+    # IndexError traceback instead of telling the caller what to pass.
+    if len(sys.argv) != 3:
+        print(USAGE, file=sys.stderr)
+        print("\nerror: expected 2 arguments, got %d. Please consult --help."
+              % (len(sys.argv) - 1), file=sys.stderr)
+        sys.exit(2)
     ui_dir, policy_path = sys.argv[1], sys.argv[2]
     with open(policy_path) as fh:
         policy = json.load(fh)

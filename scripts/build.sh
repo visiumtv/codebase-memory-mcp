@@ -111,7 +111,7 @@ for arg in "$@"; do
             EXTRA_MAKE_ARGS+=("$arg")
             ;;
         CC=*|CXX=*)
-            export "${arg}"
+            export "${arg?}"
             EXTRA_MAKE_ARGS+=("$arg")
             ;;
         *=*)

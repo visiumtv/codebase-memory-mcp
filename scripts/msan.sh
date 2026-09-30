@@ -16,12 +16,51 @@
 # be architectural, and the local ladder has no faithful x86-64 emulation to
 # decide it. An accepted venue divergence for this lane specifically: the
 # exclusions below are the LOCAL default only, and CI overrides them away.
-#
-# Usage: scripts/msan.sh [suite ...]   (default: full suite)
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+usage() {
+    cat <<'EOF'
+Usage: scripts/msan.sh [suite ...]
+
+The MemorySanitizer lane (stage 2: full coverage incl. the C++ paths). Runs
+inside the cbm-msan image (test-infrastructure/Dockerfile.msan), which provides
+the MSan-instrumented libc++/libc++abi/libunwind and zlib under MSAN_PREFIX.
+With no argument the full suite runs; bare words select individual suites.
+
+Env:
+  MSAN_PREFIX     Instrumented runtime prefix (default: /opt/msan).
+  MSAN_EXCLUDE    Space-separated suites to skip. The CI x86-64 lane is
+                  AUTHORITATIVE and overrides this to empty; the local arm64
+                  default excludes the deep-recursion suites that overflow
+                  their thread stacks under instrumentation.
+  MSAN_ORIGINS    Origin-tracking depth 0..2 (default 1). Detection is
+                  identical at every level; only report quality differs.
+
+Options:
+  -h, --help      Print this help and exit.
+
+Exit codes:
+  0 = pass · 1 = the lane's real failure (or a missing instrumented runtime)
+  2 = usage error.
+EOF
+}
+
+# --help is answered BEFORE the runtime probe below: asking a script what it
+# does must not depend on an environment only the MSan image provides.
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help) usage; exit 0 ;;
+        -*)
+            echo "msan.sh: unknown option '$arg'. Please consult --help." >&2
+            exit 2
+            ;;
+        *) :;; # bare word = suite name, validated by the runner
+    esac
+done
 
 MSAN_PREFIX="${MSAN_PREFIX:-/opt/msan}"
 if [ ! -d "$MSAN_PREFIX/lib" ]; then
